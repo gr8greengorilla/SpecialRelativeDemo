@@ -1,0 +1,125 @@
+<canvas id="myCanvas" width="500" height="500"></canvas>
+<script>
+
+    var VEL_SCALE_FACTOR = 75;
+    var CLOCK_LENGTH = 150;
+    var CLOCK_HEIGHT = 60;
+    var c = 300000000;
+
+    // Get a reference to the canvas
+    var canvas = document.getElementById('myCanvas');
+    var ctx = canvas.getContext('2d');
+
+    ctx.font = '22px sans-serif';
+
+    var MATH_DELAY = 40; // in ms
+    var x = 0;
+    var y = 0;
+    var init = false;
+    var lastx = 0;
+    var lasty = 0;
+
+    // Add an event listener for the mousemove event
+    canvas.addEventListener('mousemove', function(event) {
+        // Get the cursor's x and y coordinates
+        x = event.clientX;
+        y = event.clientY;
+
+        if (!init) {
+            lastx = x;
+            lasty = y;
+            init = true;
+        }
+
+    });
+
+    // Set an interval to draw the figure every millisecond
+    setInterval(function() {
+        drawStuff(x, y);
+    }, 1);
+
+    // Set an interval to do math
+    setInterval(function() {
+        doMath(x, y);
+    }, MATH_DELAY);
+
+
+
+    var i = 0;
+    var clockTime = 0.0;
+    var restTime = 0;
+    var displayBeta = 0;
+
+    var gamma = 0;
+
+    function doMath(x, y) {
+        // Calculate Beta using v^2/c^2
+        var vel = ((x - lastx)**2 + (y - lasty)**2)**.5;
+        vel *= c / VEL_SCALE_FACTOR
+        beta = (vel)/(c);
+
+        // Cap beta at .9999
+        beta = (beta > .99) ? .99 : beta;
+
+        //Update the displayBeta if 500 ms have passed
+        displayBeta = ((i * MATH_DELAY) % 100 == 0) ? beta : displayBeta;
+
+        // Calculate Gamma. Gamma = 1/sqrt(1-Beta^2)
+        gamma = 1/((1-(beta**2))**.5);
+
+        // Calculate the length contraction
+        diaLength = CLOCK_LENGTH / gamma;
+        diaHeight = CLOCK_HEIGHT / gamma;
+
+        // Calculate the time dilation
+        if (init) {
+            restTime += MATH_DELAY * gamma * .001;
+            clockTime += MATH_DELAY * .001;
+        }
+
+
+        // Loop the clocktime back to 0 if it passes 10mins
+        restTime = (clockTime > 10 * 60) ? 0 : restTime;
+        clockTime = (clockTime > 10 * 60) ? 0 : clockTime;
+
+        // Update last variables
+        lastx = x;
+        lasty = y;
+
+        i++;
+    }
+
+    function drawStuff(x, y) {
+        // Clear the canvas
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0,0,500,500);
+
+        // Write Beta to the canvas
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillText((displayBeta * 100).toFixed(0) + ((displayBeta < .1) ? "0" : "")  + "% the speed of light", 140, 25);
+
+        // Draw the clock rectangle
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(x - (CLOCK_LENGTH / gamma / 2), y - CLOCK_HEIGHT / gamma - 10, CLOCK_LENGTH / gamma, CLOCK_HEIGHT / gamma);
+
+        // Calculate clock text
+        var t = clockTime;
+        var mins = Math.floor(t / 60);
+        t = (t % 60);
+
+        // Display clock text
+        ctx.fillStyle = '#FF0000';
+        ctx.fillText(mins.toString() + ":" + ((t <   10) ? "0" : "") + t.toFixed(3).toString(), x - CLOCK_LENGTH / 4, y-CLOCK_HEIGHT/2);
+
+        // Calculate rest time
+        var t = restTime;
+        var mins = Math.floor(t / 60);
+        t = (t % 60);
+
+        // Display rest time
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillText("Rest Clock: " + mins.toString() + ":" + ((t <   10) ? "0" : "") + t.toFixed(3).toString(), 145, 480);
+
+    }
+
+</script>
